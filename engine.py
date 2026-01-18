@@ -95,6 +95,56 @@ def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
     """
     # TODO: Implement the method according to the above description
 
+     # alle farben iterieren
+ 
+   
+    # Liste für alle möglichen bewerteten Züge
+    evaluated_moves = []
+ 
+    # 1) Alle Figuren der aktuellen Farbe durchgehen
+    for piece in board.iterate_cells_with_pieces(minMaxArg.playAsWhite): # minmaxarg objekt da wir dinge aus minmax verwenden mit PaW 7
+ 
+        # Alle erlaubten Zielfelder dieser Figur holen
+        possible_target_cells = piece.get_valid_cells()
+ 
+        # 2) Jeden möglichen Zug ausprobieren
+        for target_cell in possible_target_cells:
+ 
+            # Aktuelle Position der Figur merken
+            original_cell = (int(piece.cell[0]), int(piece.cell[1])) # zuerst der zeilenwert, danach der spaltenwert. Das ist immer 0 und 1. int damit wir immer eine zahl habne falls es als string ist
+ 
+            # Eventuell geschlagene Figur merken
+            captured_piece = board.get_cell(target_cell)
+ 
+            # Zug simulieren
+            board.set_cell(target_cell, piece)
+ 
+            # Brett bewerten (immer aus Sicht von Weiß!)
+            evaluation_score = board.evaluate()
+ 
+            # Zug speichern
+            move = Move(piece, target_cell, evaluation_score)
+            evaluated_moves.append(move)
+ 
+            # 3) Zug rückgängig machen
+            board.set_cell(original_cell, piece)
+ 
+            if captured_piece is not None:
+                board.set_cell(target_cell, captured_piece)
+ 
+    # 4) Züge sortieren nach MinMax-Prinzip
+    if minMaxArg.playAsWhite:
+        # Weiß will hohe Scores, reverse = True (Bsp mit numbers)
+        evaluated_moves.sort(key=lambda move: move.score, reverse=True)
+    else:
+        # Schwarz will niedrige Scores
+        evaluated_moves.sort(key=lambda move: move.score)
+        # lambda function is used as a key to define custom sorting logic
+    # 5) Anzahl der Züge begrenzen
+    if len(evaluated_moves) > maximumNumberOfMoves:
+        evaluated_moves = evaluated_moves[:maximumNumberOfMoves] # slicing damit nur 10 moves genommen werden, man könnte auch 10 schreiben aber das wäre dann hart gecoded
+ 
+    return evaluated_moves
 
 def minMax(board, minMaxArg):
     """
@@ -163,6 +213,52 @@ def minMax(board, minMaxArg):
     :rtype: :py:class:`Move`
     """
     # TODO: Implement the Mini-Max algorithm
+    
+    possible_moves = evaluate_all_possible_moves(board, MinMaxArg)
+
+    if MinMaxArg.depth == 1:
+        return possible_moves[0]
+    
+    elif MinMaxArg.depth > 1:
+
+        for move in possible_moves:
+
+        
+            original_cell = (int(move.piece.cell[0]), int(move.piece.cell[1]))
+
+            captured_piece = board.get_cell(move.cell)
+
+            board.set_cell(move.cell, move.piece)
+
+            result = minMax_cached(MinMaxArg.next())
+
+            move.score = result 
+
+            board.set_cell(original_cell, move.piece)
+
+            if captured_piece is not None:
+                board.set_cell(move.cell, captured_piece)
+
+        if minMaxArg.playAsWhite:
+
+            possible_moves.sort(key = lambda move : move.score, reverse = True)
+            
+            if len(possible_moves) == 0:
+
+                if minMaxArg.playAsWhite:
+
+                    return Move(None, None, -9999)
+        
+                else:
+
+                    return Move(None, None, 9999)
+                
+            return possible_moves[0]
+    
+        return possible_moves[-1]
+    
+       
+
 
 
 def suggest_random_move(board):
@@ -178,7 +274,7 @@ def suggest_random_move(board):
 
     If there are no legal moves at all, return None.
     """
-    # TODO: Implement a valid random move
+    # TODO: Implement a valid random move 
 
 
 

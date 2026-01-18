@@ -122,7 +122,7 @@ class BoardBase:
         Calls is_king_check for board configurations not yet known. Caches the result for later look-up.
         """
         # Calculate hash and see if current position is in the cache
-        hash = self.hash() + "-w" if white else "-b"
+        hash = self.hash() + ("-w" if white else "-b")
         if hash in self.check_cache:
             return self.check_cache[hash]
 
@@ -241,6 +241,11 @@ class Board(BoardBase):
         :type white: Boolean
         """
         # TODO: Implement
+        for row in range(8):
+            for col in range(8):
+                piece = self.cells[row][col]
+                if piece is not None and piece.white == white:
+                    yield piece
 
     def find_king(self, white):
         """
@@ -256,6 +261,11 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
+        for piece in self.iterate_cells_with_pieces(white):
+            if isinstance(piece, King):
+                return piece
+        return None
+
     def is_king_check(self, white):
         """
         **TODO**: Evaluate if the king of given color is currently in check.
@@ -267,6 +277,21 @@ class Board(BoardBase):
         Iterate over each reachable cell and check if the kings cell is reachable. If yes, shortcut and return True right away.
         """
         # TODO: Implement
+
+        king = self.find_king(white)
+        if king is None:
+            return False
+
+        king_cell = king.cell
+
+        # Gegnerische Figuren
+        for piece in self.iterate_cells_with_pieces(not white):
+            reachable_cells = piece.get_reachable_cells()
+            for cell in reachable_cells:
+                if np.array_equal(cell, king_cell):
+                    return True
+
+        return False
 
     def evaluate(self):
         """
@@ -280,6 +305,12 @@ class Board(BoardBase):
         """
         # TODO: Implement
         score = 0.0
+        for piece in self.iterate_cells_with_pieces(True):  # muss alle Figuren liefern
+            score += piece.evaluate()
+            
+        for piece in self.iterate_cells_with_pieces(False):  # muss alle Figuren liefern
+            score -= piece.evaluate()
+
         return score
 
     def is_valid_cell(self, cell):
@@ -293,6 +324,11 @@ class Board(BoardBase):
         Don´t forget to handle the special case of "cell" being None. Return False in that case
         """
         # TODO: Implement
+        if cell is None:
+            return False
+
+        row, col = cell
+        return 0 <= row < 8 and 0 <= col < 8
 
     def cell_is_valid_and_empty(self, cell):
         """
@@ -304,6 +340,11 @@ class Board(BoardBase):
         """
         # TODO: Implement
 
+        if not self.is_valid_cell(cell):
+            return False
+
+        return self.get_cell(cell) is None
+    
     def piece_can_enter_cell(self, piece, cell):
         """
         **TODO**: Check if the given piece can enter the given cell.
@@ -320,6 +361,16 @@ class Board(BoardBase):
         the given piece "white" attribute.
         """
         # TODO: Implement
+
+        if not self.is_valid_cell(cell):
+            return False
+
+        other = self.get_cell(cell)
+
+        if other is None:
+            return True
+
+        return other.white != piece.white
  
 
     def piece_can_hit_on_cell(self, piece, cell):
@@ -338,3 +389,12 @@ class Board(BoardBase):
         the given piece "white" attribute.
         """
         # TODO: Implement
+        if not self.is_valid_cell(cell):
+            return False
+
+        other = self.get_cell(cell)
+
+        if other is None:
+            return False
+
+        return other.white != piece.white

@@ -61,6 +61,15 @@ class Piece:
         :return: Return numerical score between -infinity and +infinity. Greater values indicate better evaluation result (more favorable).
         """
         # TODO: Implement
+        values = {
+            Pawn: 1.0,
+            Knight: 3.0,
+            Bishop: 3.0,
+            Rook: 5.0,
+            Queen: 100.0,
+            King: 1000.0,
+        }
+        return values[type(self)]
 
     def get_valid_cells(self):
         """
@@ -85,6 +94,25 @@ class Piece:
         :return: Return True 
         """
         # TODO: Implement
+        valid_cells = []
+        original_cell = self.cell
+        reachable_cells = self.get_reachable_cells()
+
+        for target_cell in reachable_cells:
+            captured = self.board.get_cell(target_cell)
+
+        # Zug simulieren
+            self.board.set_cell(target_cell, self)
+
+        # Prüfen, ob eigener König im Schach steht
+            if not self.board.is_king_check_cached(self.white):
+                valid_cells.append(target_cell)
+
+        # 
+            self.board.set_cell(original_cell, self)
+            self.board.set_cell(target_cell, captured)
+
+        return valid_cells
 
 class Pawn(Piece):  # Bauer
     def __init__(self, board, white):
@@ -111,7 +139,29 @@ class Pawn(Piece):  # Bauer
         :return: A list of reachable cells this pawn could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        row, col = self.cell
+        direction = 1 if self.white else -1
+        reachable_cells = []
 
+
+        # Ein Feld vor
+        one_step = (row + direction, col)
+        if self.board.cell_is_valid_and_empty(one_step):
+            reachable_cells.append(one_step)
+
+            # Zwei Felder vor (nur Startposition)
+            start_row = 1 if self.white else 6
+            two_step = (row + 2 * direction, col)
+            if row == start_row and self.board.cell_is_valid_and_empty(two_step):
+                reachable_cells.append(two_step)
+
+        # Diagonal schlagen
+        for dcol in (-1, 1):
+            target = (row + direction, col + dcol)
+            if self.can_hit_on_cell(target):
+                reachable_cells.append(target)
+
+        return reachable_cells
 
 class Rook(Piece):  # Turm
     def __init__(self, board, white):
@@ -134,7 +184,26 @@ class Rook(Piece):  # Turm
         :return: A list of reachable cells this rook could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        cells = []
+        row, col = self.cell
 
+        directions = [(1,0), (-1,0), (0,1), (0,-1)]
+
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            while True:
+                cell = np.array([r, c])
+                if self.board.cell_is_valid_and_empty(cell):
+                    cells.append(cell)
+                elif self.can_hit_on_cell(cell):
+                    cells.append(cell)
+                    break
+                else:
+                    break
+                r += dr
+                c += dc
+
+        return cells
 
 class Knight(Piece):  # Springer
     def __init__(self, board, white):
@@ -157,6 +226,22 @@ class Knight(Piece):  # Springer
         :return: A list of reachable cells this knight could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        # Zellen die der Springer von Seiner Position errreichen kann
+        cells = []                                  # Leere Liste, die alle erreichbaren Felder abspeichert
+        row, col = self.cell                        # Aktuelle Zeile, Spalte der Figur
+
+        directions = [                                   # Alle möglichen Spielzüge des Springers [L-Form]
+            (2,1), (2,-1), (-2,1), (-2,-1),
+            (1,2), (1,-2), (-1,2), (-1,-2)
+        ]
+
+        for dr, dc in directions:                        # dr - Änderung der Zeile / dc - Änderung der Spalte
+            cell = np.array([row + dr, col + dc])   # Speichert Neue Position nach dem Sprung als Array
+            if self.can_enter_cell(cell):           # Kann die Figur das Feld betreten   
+                cells.append(cell)                  # Wird in die Liste Cells eingefügt
+
+        return cells                                # Gibt alle gültigen Felder zurück auf die der Springer drauf kann  
+
 
 
 class Bishop(Piece):  # Läufer
@@ -179,7 +264,27 @@ class Bishop(Piece):  # Läufer
         :return: A list of reachable cells this bishop could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        
+        cells = []                                              # Leere Liste die alle erreichbaren Felder abspeichert
+        row, col = self.cell                                    # Aktuelle Zeile und Spalte der Figur
 
+        directions = [(1,1), (1,-1), (-1,1), (-1,-1)]           # Possible Moves (4 diagonale Richtungen)
+
+        for dr, dc in directions:                               # Geht jede Mögliche Richtung durch (Änderung der Zeile, Spalte)
+            r, c = row + dr , col + dc                          # Erstes Feld in die Richtung
+            while True:                                         # Schleife wird erhöht bis Blockade erreicht ist
+                cell = np.array([r, c])                         # Speichert die neue Position in einem Array ab
+                if self.board.cell_is_valid_and_empty(cell):    # Leer und Valid
+                    cells.append(cell)                          # Feld wird Zelle hinzugefügt
+                elif self.can_hit_on_cell(cell):                # Kann Figur schlagen
+                    cells.append(cell)                          # Feld wird Zelle hinzugefügt
+                    break                                       # Stoppt weil der Springer nicht darüber hinausziehen kann
+                else:
+                    break                                       # Wenn das Feld nicht leer ist und keine gegnerische Figur drauf ist break (keine Valid Cell, Eigene Figur))
+                r += dr                                         # Schritt in die gleiche Richtung (row)
+                c += dc                                         # Schritt in die gleiche Richtung (col)
+
+        return cells                              
 
 class Queen(Piece):  # Königin
     def __init__(self, board, white):
@@ -202,7 +307,29 @@ class Queen(Piece):  # Königin
         :return: A list of reachable cells this queen could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        cells = []                                              # Erstelle eine Leere Liste für alle erreichbaren Zellen
+        row, col = self.cell                                    # Aktuelle Position der Dame
 
+        directions = [                                          # Alle möglichen Richtungen, welche die Dame gehen kann
+            (1,0), (-1,0), (0,1), (0,-1),
+            (1,1), (1,-1), (-1,1), (-1,-1)
+        ]
+
+        for dr, dc in directions:                               # Geht alle möglichen Richtungen durch
+            r, c = row + dr, col + dc                           # Erstes Feld in die Richtung
+            while True:                                         # Schleife wird erhöht bis Blockade erreicht ist (while True immer 1 Schritt weiter)
+                cell = np.array([r, c])                         # Neue Position der Dame wird in einem Array gespeichert (row,col)
+                if self.board.cell_is_valid_and_empty(cell):    # Wenn Zelle gültig und leer ist
+                    cells.append(cell)                          # Feld wird Zelle hinzugefügt
+                elif self.can_hit_on_cell(cell):                # Wenn Figur in der Zelle geschlagen werden kann
+                    cells.append(cell)                          # Feld wird Zelle hinzugefügt
+                    break                                       # break weil nach dem capture kein weiteres Feld weitergezogen werden kann
+                else:
+                    break                                       # break wenn kein valides Feld mehr frei ist (eigenes Piece, ausßerhalb des Felds)
+                r += dr                                         # Schritt in die gleiche Richtung (row)
+                c += dc                                         # Schritt in die gleiche Richtung (col)
+
+        return cells                                            # Gibt alle gültigen Felder zurück auf die die Dame gehen kann
 
 class King(Piece):  # König
     def __init__(self, board, white):
@@ -224,3 +351,21 @@ class King(Piece):  # König
         :return: A list of reachable cells this king could move into.
         """
         # TODO: Implement a method that returns all cells this piece can enter in its next move
+        cells = []                                              # Leere Liste mit den erreichbaren Feldern
+        row, col = self.cell                                    # Aktuelle Position des Königs
+
+        directions = [                                          # Bewegungsmöglichkeiten
+            (-1,-1), (-1,0), (-1,1),
+            (0,-1)     ,     (0,1),
+            (1,-1),  (1,0),  (1,1)
+        ]
+
+        for dr, dc in directions:                               # Geht alle möglichen Felder durch auf die der König kann
+            cell = np.array([row + dr, col + dc])               # Neue Position wird in einem Array gespeichert             
+            if self.board.cell_is_valid_and_empty(cell):        # Zelle ist gültig und leer
+                cells.append(cell)                              # Feld wird in cell hinzugefügt
+            elif self.can_hit_on_cell(cell):                    # König kann den Gegner schlagen          
+                cells.append(cell)                              # Feld wird in cell hinzugefügt                      
+                                                       
+
+        return cells                                            # # Gibt alle gültigen Felder zurück auf die der König gehen kann                                  
