@@ -179,9 +179,13 @@ def run_game(board, manual=False):
 
     while running:
         if nextMove is None and not manual:
-            # nextMove = suggest_move(board)
-            nextMove = suggest_random_move(board)
+            nextMove = suggest_move(board)
+            #nextMove = suggest_random_move(board)
             print("Next Move is ", nextMove)
+            
+            if nextMove == None:
+                print("ENGINE HAT NONE GELIEFERT")
+  
             board.set_cell(nextMove.cell, nextMove.piece)
             uiState.score = nextMove.score
             displayScore = np.tanh(uiState.score / 8.0) * 4.0

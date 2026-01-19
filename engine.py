@@ -1,16 +1,16 @@
 import random
 from tqdm import tqdm
 from util import map_piece_to_character, cell_to_string
-
-
-DEPTH = 3
-
-
+ 
+ 
+DEPTH = 2
+ 
+ 
 class MinMaxArg:
     """ Helper Class for the MinMax Algorithm.
-    This class stores the current search depth and whether we are playing as white or black in this stage. 
-
-    Note: You don´t need to implement anything in this case, you can use it in the MinMax Algorithm as you seem fit. 
+    This class stores the current search depth and whether we are playing as white or black in this stage.
+ 
+    Note: You don´t need to implement anything in this case, you can use it in the MinMax Algorithm as you seem fit.
     """
     def __init__(self, depth=DEPTH, playAsWhite=True):
         """
@@ -18,22 +18,22 @@ class MinMaxArg:
         """
         self.depth = depth
         self.playAsWhite = playAsWhite
-
+ 
     def next(self):
-        """ 
+        """
         Provides the next stage of the MinMax Algorithm by reducing the depth by one and toggling playAsWhite
         """
         return MinMaxArg(self.depth - 1, not self.playAsWhite)
-
-
+ 
+ 
 class Move:
     """
-    Helper class to store an evaluated move for the MinMax Algorithm. 
-    This class contains the piece that should be moved as well as the cell it should move into alongside with the evaluation score for this move. 
-
-    Note: You don´t need to implement anything in this case, you can use it in the MinMax Algorithm as you seem fit. 
+    Helper class to store an evaluated move for the MinMax Algorithm.
+    This class contains the piece that should be moved as well as the cell it should move into alongside with the evaluation score for this move.
+ 
+    Note: You don´t need to implement anything in this case, you can use it in the MinMax Algorithm as you seem fit.
     """
-
+ 
     def __init__(self, piece, cell, score):
         """
         Constructor initializes the class according to the provided parameters
@@ -41,64 +41,25 @@ class Move:
         self.piece = piece
         self.cell = cell
         self.score = score
-
+ 
     def __str__(self):
         """
         Helper class to turn this move into a neat string representation following the official chess notation guidelines.
         Note: This method does not properly indicate a check "+" or check-mate "#" in the notation as that would require a
-        deeper analysis of the resulting board configuration. However, it appends the evaluated score of this move just for reference. 
+        deeper analysis of the resulting board configuration. However, it appends the evaluated score of this move just for reference.
         """
         fr = cell_to_string(self.piece.cell)
         to = cell_to_string(self.cell)
         center = "."
         if not self.piece.board.cell_is_valid_and_empty(self.cell):
             center = "x"
-
+ 
         s = map_piece_to_character(self.piece).upper() + fr + center + to
         s += f"({self.score:.2f})"
         return s
-
-
-def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
-    """
-    **TODO**:
-    This method must evaluate all possible moves from all pieces of the current color. 
-
-    So if minMaxArg.playAsWhite is True, all possible moves of all white pieces must be evaluated.
-    And if minMaxArg.playAsWhite is False, all possible moves of all black pieces must be evaluated. 
-
-    Iterate over all cells with pieces on them by calling the :py:meth:`iterate_cells_with_pieces <board.Board.iterate_cells_with_pieces>` method. 
-    For each piece, retrieve all valid moves by calling the :py:meth:`get_valid_cells <pieces.Piece.get_valid_cells>` method of that piece. 
-
-    In order to evaluate a valid move, first you need to place that piece on the respective cell. Call the :py:meth:`set_cell <board.BoardBase.set_cell>` method 
-    to do so. Before doing so, remember the cell the piece is currently placed on as you will need to place it back later.
-    Because placing a piece on a new cell could potential hit (and thus remove) an opposing piece currently placed on this cell, 
-    you need to remember the piece on the target cell as well. Call :py:meth:`get_cell <board.BoardBase.get_cell>` to retrieve that piece and store it in a variable.
-
-    After the new board configuration is set in place, call the :py:meth:`evaluate <board.Board.evaluate>` method. You can use the 
-    :py:class:`Move` class to store the move (piece and target cell) alongside its achieved evaluation score in a list. 
-
-    Restore the original board configuration by placing the piece in its original cell and restoring any potentially removed piece before 
-    moving on to the next move or piece. 
-
-    Remember the :py:meth:`evaluate <board.Board.evaluate>` method always evaluates from WHITEs perspective, so a higher evaluation
-    relates to a better position for WHITE. 
-
-    Moves must be sorted with respect o the scalar evaluation according to the minMax scheme. 
-    So if minMaxArg.playAsWhite is True, the moves must be sorted in *descending* order, so the best evaluated move for white is in array position 0.
-    So if minMaxArg.playAsWhite is False, the moves must be sorted in *ascending* order, so the worst evaluated move for white is in array position 0.
-
-    Use the lists sort method and provide a proper key to the sorting algorithm, such that it sorts the moves according to the achieved score. 
-    
-    After sorting, a maximum number of moves as provided by the respective parameter must be returned. If there are 
-    more moves possible (in most situations there are), only return the top (or worst). Hint: Slice the list after sorting. 
-    """
-    # TODO: Implement the method according to the above description
-
-     # alle farben iterieren
  
-   
-    # Liste für alle möglichen bewerteten Züge
+ 
+def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
     evaluated_moves = []
  
     # 1) Alle Figuren der aktuellen Farbe durchgehen
@@ -111,7 +72,7 @@ def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
         for target_cell in possible_target_cells:
  
             # Aktuelle Position der Figur merken
-            original_cell = (int(piece.cell[0]), int(piece.cell[1])) # zuerst der zeilenwert, danach der spaltenwert. Das ist immer 0 und 1. int damit wir immer eine zahl habne falls es als string ist
+            original_cell = piece.cell # zuerst der zeilenwert, danach der spaltenwert. Das ist immer 0 und 1. int damit wir immer eine zahl habne falls es als string ist
  
             # Eventuell geschlagene Figur merken
             captured_piece = board.get_cell(target_cell)
@@ -132,79 +93,150 @@ def evaluate_all_possible_moves(board, minMaxArg, maximumNumberOfMoves = 10):
             if captured_piece is not None:
                 board.set_cell(target_cell, captured_piece)
  
-    # 4) Züge sortieren nach MinMax-Prinzip
-    if minMaxArg.playAsWhite:
-        # Weiß will hohe Scores, reverse = True (Bsp mit numbers)
-        evaluated_moves.sort(key=lambda move: move.score, reverse=True)
-    else:
-        # Schwarz will niedrige Scores
-        evaluated_moves.sort(key=lambda move: move.score)
-        # lambda function is used as a key to define custom sorting logic
-    # 5) Anzahl der Züge begrenzen
+    
+    evaluated_moves.sort(key=lambda move: move.score, reverse = minMaxArg.playAsWhite)
+    
     if len(evaluated_moves) > maximumNumberOfMoves:
         evaluated_moves = evaluated_moves[:maximumNumberOfMoves] # slicing damit nur 10 moves genommen werden, man könnte auch 10 schreiben aber das wäre dann hart gecoded
  
     return evaluated_moves
-
-def minMax(board, minMaxArg):
+   
+"""
+    **TODO**:
+    This method must evaluate all possible moves from all pieces of the current color.
+ 
+    So if minMaxArg.playAsWhite is True, all possible moves of all white pieces must be evaluated.
+    And if minMaxArg.playAsWhite is False, all possible moves of all black pieces must be evaluated.
+ 
+    Iterate over all cells with pieces on them by calling the :py:meth:`iterate_cells_with_pieces <board.Board.iterate_cells_with_pieces>` method.
+    For each piece, retrieve all valid moves by calling the :py:meth:`get_valid_cells <pieces.Piece.get_valid_cells>` method of that piece.
+ 
+    In order to evaluate a valid move, first you need to place that piece on the respective cell. Call the :py:meth:`set_cell <board.BoardBase.set_cell>` method
+    to do so. Before doing so, remember the cell the piece is currently placed on as you will need to place it back later.
+    Because placing a piece on a new cell could potential hit (and thus remove) an opposing piece currently placed on this cell,
+    you need to remember the piece on the target cell as well. Call :py:meth:`get_cell <board.BoardBase.get_cell>` to retrieve that piece and store it in a variable.
+ 
+    After the new board configuration is set in place, call the :py:meth:`evaluate <board.Board.evaluate>` method. You can use the
+    :py:class:`Move` class to store the move (piece and target cell) alongside its achieved evaluation score in a list.
+ 
+    Restore the original board configuration by placing the piece in its original cell and restoring any potentially removed piece before
+    moving on to the next move or piece.
+ 
+    Remember the :py:meth:`evaluate <board.Board.evaluate>` method always evaluates from WHITEs perspective, so a higher evaluation
+    relates to a better position for WHITE.
+ 
+    Moves must be sorted with respect o the scalar evaluation according to the minMax scheme.
+    So if minMaxArg.playAsWhite is True, the moves must be sorted in *descending* order, so the best evaluated move for white is in array position 0.
+    So if minMaxArg.playAsWhite is False, the moves must be sorted in *ascending* order, so the worst evaluated move for white is in array position 0.
+ 
+    Use the lists sort method and provide a proper key to the sorting algorithm, such that it sorts the moves according to the achieved score.
+   
+    After sorting, a maximum number of moves as provided by the respective parameter must be returned. If there are
+    more moves possible (in most situations there are), only return the top (or worst). Hint: Slice the list after sorting.
     """
+    # TODO: Implement the method according to the above description
+ 
+ 
+def minMax(board, minMaxArg):
+    possible_moves = evaluate_all_possible_moves(board, minMaxArg)   # Liste die alle Figuren und gültigen Zügen bewertet
+ 
+    if len(possible_moves) == 0:                                  # Keine Züge mehr = verloren
+        score = -9999 if minMaxArg.playAsWhite else 9999
+        return Move(None, None, score)                      # Beendet die Funktion
+       
+ 
+    # Abbruchbedingung
+    if minMaxArg.depth == 1:  
+                                              # Wenn die Depth 1 ist, keine Rekursion
+        return possible_moves[0]            # Wählt besten Zug laut Score
+ 
+    # Rekursion
+    for move in possible_moves:                      
+        piece = move.piece
+        from_cell = piece.cell
+        to_cell = move.cell
+        captured = board.get_cell(to_cell)
+ 
+        board.set_cell(to_cell, piece)                      # Figur auf das neue Feld
+ 
+        # Gegenzug
+        result = minMax_cached(board, minMaxArg.next())   # Bewertung des besten Gegenzugs
+        move.score = result.score                         # Speichert response in move
+ 
+        # Zug rückgängig machen
+        board.set_cell(from_cell, piece)
+        if captured is not None:
+            board.set_cell(to_cell, captured)
+ 
+    # Neu sortieren nach aktualisierten Scores
+    possible_moves.sort(key=lambda m: m.score,reverse=minMaxArg.playAsWhite) 
+
+
+    # für random moves von den 3 besten
+    number_best_moves = 3
+
+    best_moves = possible_moves[:number_best_moves]
+ 
+    return random.choice(best_moves)   # Gibt random zug zurück mit random.choice(best_moves)
+ 
+"""
     **TODO**:
     This method implement the core mini-max search algorithm.
-    The minMaxArg contain information about whether we are currently 
-    playing as white or black as well as the remaining search depth. 
-
+    The minMaxArg contain information about whether we are currently
+    playing as white or black as well as the remaining search depth.
+ 
     If minMaxArg.depth equals 1, no additional moves will be considered and
-    the best evaluated move for the current board configuration should be 
+    the best evaluated move for the current board configuration should be
     returned. If, however, minMaxArg.depth is greater than 1, for each possible
-    move of the current color, all answering moves of the opposite color need 
-    to be considered. 
-
+    move of the current color, all answering moves of the opposite color need
+    to be considered.
+ 
     *HINT*: Start by calling :py:func:`evaluate_all_possible_moves <engine.evaluate_all_possible_moves>`
     with the provided board and minMaxArg in order to receive a list of evaluated moves.
-    Note that the list is already sorted and contains only the best possible moves for the current color. 
+    Note that the list is already sorted and contains only the best possible moves for the current color.
     This means if white is playing, the returned list will contain the best moves for white to make
-    whereas if black is playing, the returned list will contain the best moves for black to make first. 
-
+    whereas if black is playing, the returned list will contain the best moves for black to make first.
+ 
     You will need to handle the special case that there are no possible moves left,
     meaning the :py:func:`evaluate_all_possible_moves <engine.evaluate_all_possible_moves>`
     method returns an empty list. If there are no possible moves left, this means
-    the current color has lost the game. Indicate that by returning an instance of the 
+    the current color has lost the game. Indicate that by returning an instance of the
     :py:class:`Move` class where you set the score attribute to a very high or very low value
     (remember: Always think from whites perspective!)
-
+ 
     If the remaining search depth is greater than 1 (minMaxArg.depth > 1),
-    iterate over all possible moves. Implement each move by placing the piece in question on the respective cell. 
-    Call the :py:meth:`set_cell <board.BoardBase.set_cell>` method 
+    iterate over all possible moves. Implement each move by placing the piece in question on the respective cell.
+    Call the :py:meth:`set_cell <board.BoardBase.set_cell>` method
     to do so. Before doing so, remember the cell the piece is currently placed on as you will need to place it back later.
-    Because placing a piece on a new cell could potential hit (and thus remove) an opposing piece currently placed on this cell, 
-    you need to remember the piece on the target cell as well. Call :py:meth:`get_cell <board.BoardBase.get_cell>` 
+    Because placing a piece on a new cell could potential hit (and thus remove) an opposing piece currently placed on this cell,
+    you need to remember the piece on the target cell as well. Call :py:meth:`get_cell <board.BoardBase.get_cell>`
     to retrieve that piece and store it in a variable.
-
-    After the new board configuration is set in place, 
+ 
+    After the new board configuration is set in place,
     call the :py:meth:`minMax_cached <engine.minMax_cached>` method
     with the next minMaxArg (call :py:meth:`next <engine.MinMaxArg.next>`)
-
+ 
     Overwrite the current moves score with the result from the recursive call.
-    
-    Restore the original board configuration by placing the piece in its original cell and restoring any potentially removed piece before 
-    moving on to the next move. 
-
+   
+    Restore the original board configuration by placing the piece in its original cell and restoring any potentially removed piece before
+    moving on to the next move.
+ 
     After all moves and their counter-moves have been evaluated sort the list
     again in the correct order according to the (new) scores. If playing as white
     (minMaxArg.playAsWhite == True), you need to sort in descending order (highest ranked move first)
     whereas if playing as black (minMaxArg.playAsBlack == False), you need to sort
     in ascending order (lowest ranked move first). Use the lists sort method and
-    define a proper key function to implement the needed search. 
-
-    In the most basic implementation of the algorithm return the best move after sorting. 
-
+    define a proper key function to implement the needed search.
+ 
+    In the most basic implementation of the algorithm return the best move after sorting.
+ 
     **NOTE**: You can improve the replayability of your chess engine a bit
-    if you add some randomness to the evaluation of moves. For example, you 
+    if you add some randomness to the evaluation of moves. For example, you
     can randomly increment and decrement each evaluation score. Alternatively
-    you can return a random move out of the best three instead of simply the best one. 
-
-    Feel free to experiment with this once you have the core algorithm properly implemented. 
-
+    you can return a random move out of the best three instead of simply the best one.
+ 
+    Feel free to experiment with this once you have the core algorithm properly implemented.
+ 
     :param board: Reference to the board we need to play on
     :type board: :py:class:`board.Board`
     :param minMaxArg: The combined arguments for the mini-max search algorithm.
@@ -213,101 +245,69 @@ def minMax(board, minMaxArg):
     :rtype: :py:class:`Move`
     """
     # TODO: Implement the Mini-Max algorithm
-    
-    possible_moves = evaluate_all_possible_moves(board, MinMaxArg)
-
-    if MinMaxArg.depth == 1:
-        return possible_moves[0]
-    
-    elif MinMaxArg.depth > 1:
-
-        for move in possible_moves:
-
-        
-            original_cell = (int(move.piece.cell[0]), int(move.piece.cell[1]))
-
-            captured_piece = board.get_cell(move.cell)
-
-            board.set_cell(move.cell, move.piece)
-
-            result = minMax_cached(MinMaxArg.next())
-
-            move.score = result 
-
-            board.set_cell(original_cell, move.piece)
-
-            if captured_piece is not None:
-                board.set_cell(move.cell, captured_piece)
-
-        if minMaxArg.playAsWhite:
-
-            possible_moves.sort(key = lambda move : move.score, reverse = True)
-            
-            if len(possible_moves) == 0:
-
-                if minMaxArg.playAsWhite:
-
-                    return Move(None, None, -9999)
-        
-                else:
-
-                    return Move(None, None, 9999)
-                
-            return possible_moves[0]
-    
-        return possible_moves[-1]
-    
-       
-
-
-
+ 
+ 
 def suggest_random_move(board):
-    """
+    moves = []                                              # Leere Liste
+ 
+    for piece in board.iterate_cells_with_pieces(True):     # Geht durch alle Spielzüge für jede eigene Figur
+        valid_cells = piece.get_valid_cells()               # gültige Zellen werden in valid_cells gespeichert
+        if valid_cells:                                     # WENN Zelle gültig
+            for cell in valid_cells:                        # geht durch jedes erlaubte Feld
+                moves.append(Move(piece, cell, 0))          # Die neue Position der Figur wird in der Liste Move hinzugefügt
+                                                            # Score 0 - suggest random move -> keine Bewertung der
+ 
+    if not moves:                                           # Wenn die Liste der Züge leer ist
+        return None
+                                               
+    return random.choice(moves)                            # gibt einen zufälligen Zug aus der Liste zurück
+ 
+"""
     Pick a random legal move for White.
-
+ 
     Hints:
     - collect all white pieces
     - keep only pieces that actually have valid moves
     - randomly pick one of these pieces
     - randomly pick one of its valid target cells
     - return a Move object so the UI can handle it just like any other engine move
-
+ 
     If there are no legal moves at all, return None.
     """
-    # TODO: Implement a valid random move 
-
-
-
+    # TODO: Implement a valid random move
+ 
+ 
+ 
 def suggest_move(board):
     """
     Helper function to start the mini-max algorithm.
     """
     return minMax_cached(board, MinMaxArg())
-
+ 
 eval_cache = {}
 total_hits = 0
-
-
+ 
+ 
 def minMax_cached(board, minMaxArg):
     """
     A cached version of the minMax method. This methods caches results
     based on its parameters. If called again with a known board configuration
     and minMaxArgs, the result is taken from the cache instead of repeating
     the mini-max algorithm again. This can save computation time as
-    it avoid to repeat evaluations over and over again. 
+    it avoid to repeat evaluations over and over again.
     """
     global eval_cache, total_hits
-
+ 
     # Calculate a unique hash code for the current board position and search depth
     hash = str(minMaxArg.depth) + board.hash()
     if hash in eval_cache:
         total_hits += 1
         # print(f"Cache hit! Cache has {len(eval_cache.keys())} entries with {total_hits} hits so far")
         return eval_cache[hash]
-
+ 
     # Its not the cache so do the actual evaluation
     bestMove = minMax(board, minMaxArg)
-
+ 
     # Cache it for later
     eval_cache[hash] = bestMove
     return bestMove
